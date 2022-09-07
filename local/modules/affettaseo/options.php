@@ -7,6 +7,7 @@
  */
 
 use Bitrix\Main\Loader;
+use \Bitrix\Main\Application;
 
 Loader::includeModule('affettaseo');   //инитит классы типа CAffettaseo
 IncludeModuleLangFile(__FILE__);
@@ -16,7 +17,7 @@ $FORM_RIGHT = $APPLICATION->GetGroupRight($mid);
 
 //if request method restore
 //require before option list
-if ($_SERVER['REQUEST_METHOD'] == "GET" && CAffettaseo_ext::IsAdmin() && $RestoreDefaults <> '' && check_bitrix_sessid())
+if ($_SERVER['REQUEST_METHOD'] == "GET" && CAffettaseo::IsAdmin() && $RestoreDefaults <> '' && check_bitrix_sessid())
 {
     COption::RemoveOption($mid);
     $z = CGroup::GetList($v1, $v2, array("ACTIVE" => "Y", "ADMIN" => "N"));
@@ -35,7 +36,7 @@ $arAllOptions = array(
 
 
 //if request method update
-if($_SERVER['REQUEST_METHOD'] == "POST" && CAffettaseo_ext::IsAdmin() && $Update <> '' && check_bitrix_sessid())
+if($_SERVER['REQUEST_METHOD'] == "POST" && CAffettaseo::IsAdmin() && $Update <> '' && check_bitrix_sessid())
 {
     foreach($arAllOptions as $ar)
     {
@@ -48,6 +49,13 @@ if($_SERVER['REQUEST_METHOD'] == "POST" && CAffettaseo_ext::IsAdmin() && $Update
 
         COption::SetOptionString($mid, $name, $val);
     }
+}
+
+//if request method clear cache
+if($_SERVER['REQUEST_METHOD'] == "POST" && CAffettaseo::IsAdmin() && $_POST['clearCache'] == 'Y' && check_bitrix_sessid())
+{
+    $taggedCache = Application::getInstance()->getTaggedCache(); // Служба пометки кеша тегами
+    $taggedCache->clearByTag('affettaseo_module_cache');
 }
 
 //tabs list title and name
@@ -63,7 +71,8 @@ $tabControl->Begin();
 
 //form init
 ?><form method="POST" id="affettaseo_form_settings" action="<?echo $APPLICATION->GetCurPage()?>?mid=<?=htmlspecialcharsbx($mid)?>&lang=<?=LANGUAGE_ID?>"><?=bitrix_sessid_post()?>
-<?
+    <input type="hidden" name="clearCache" value="">
+    <?
 //first tab
 $tabControl->BeginNextTab();?>
 <?php
@@ -105,7 +114,8 @@ $tabControl->BeginNextTab();?>
     Но при соблюдении следующих условий:<br>
     <ul>
         <li>title - задан функцией "<?=htmlspecialchars('<title><? $APPLICATION->ShowTitle(false);?> </title>')?>"</li>
-        <li>h1 - задан функцией "<?=htmlspecialchars('<h1><?= $APPLICATION->GetDirProperty("h1") ?></h1>')?>" (можно задавать дефолтное значение в файле .section.php раздела)</li>
+        <li>h1 - задан функцией "<?=htmlspecialchars('<h1><?= $APPLICATION->GetDirProperty("h1") ?></h1>')?>" на не детальных страницах, чтобы подтягивалось дефолтное значение из .section<br>
+            для детальных страниц "<?=htmlspecialchars('<h1><?= $APPLICATION->GetPageProperty("h1", $arResult["NAME"]) ?></h1>')?>", чтобы при отсутствии значение выводился заголовок элемента</li>
         <li>description - вообще никак не затронут (можно задавать дефолтное значение в файле .section.php раздела)</li>
     </ul>
     <pre>
@@ -119,7 +129,17 @@ $tabControl->BeginNextTab();?>
     При установки модуля атоматически создается highloadblock AffettaSeoInfoHB со всеми необходимыми параметрами. ID созданого инфоблока записывается в поле "ID Highload-блока работающего с СЕО" в настройках модуля affettaseo.<br>
     При удалении модуля ни highloadblock AffettaSeoInfoHB, ни дополнительные пользовательские поля созданные для него не удаляются.
 </div>
-
+<script type="text/javascript">
+    function ClearCache()
+    {
+        if(confirm('Будет очищен тольлко кэш модуля')){
+            document.querySelector('input[name=clearCache]').value = 'Y';
+            document.querySelector('#affettaseo_form_settings').submit();
+        }
+    }
+</script>
+    <br>
+<input <?if ($FORM_RIGHT<"W") echo "disabled" ?> type="submit" onclick="ClearCache();" value="<?echo GetMessage("CLEAR_IMAGE_FOLDER")?>">
 <?
 //forth tab
 $tabControl->BeginNextTab();?>

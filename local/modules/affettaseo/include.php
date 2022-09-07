@@ -11,8 +11,6 @@ $DBType = mb_strtolower($DB->type);
 CModule::AddAutoloadClasses(
     "affettaseo",
     array(
-//        "CForm" => "classes/".$DBType."/form_cform.php",
         "CAffettaseo" => "classes/general/affettaseo_affettaseo.php",
-        "CAffettaseo_ext" => "classes/".$DBType."/affettaseo_affettaseo.php",
     )
 );
